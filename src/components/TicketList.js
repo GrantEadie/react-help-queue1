@@ -1,32 +1,27 @@
 import React from "react";
-import Ticket from "./Ticket";
 import PropTypes from "prop-types";
+import Ticket from "./Ticket";
 
-//below: we use a .map loop to loop through the tickets. We pass in index and use it to assign a unique key to help differentiate them
 function TicketList(props){
-  
-    // const myStyledComponentStyles = {
-    //   backgroundColor: '#ecf0f1',
-    //   fontFamily: 'sans-serif',
-    //   paddingTop: '50px'
-    // }
   return (
     <React.Fragment>
-      
       <hr/>
-      {props.ticketList.map((ticket, index) =>
-        <Ticket names={ticket.names}
+      {Object.values(props.ticketList).map((ticket) =>
+        <Ticket
+          whenTicketClicked = { props.onTicketSelection }
+          names={ticket.names}
           location={ticket.location}
           issue={ticket.issue}
-          key={index}/>
+          id={ticket.id}
+          key={ticket.id}/>
       )}
-      
     </React.Fragment>
   );
 }
 
 TicketList.propTypes = {
-  ticketList: PropTypes.array
+  ticketList: PropTypes.object,
+  onTicketSelection: PropTypes.func
 };
 
 export default TicketList;

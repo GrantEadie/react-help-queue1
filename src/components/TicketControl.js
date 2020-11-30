@@ -1,9 +1,10 @@
-//Parent control for new ticket form and ticketlist
-//Ticket Control has two states: TicketList is showing and NewTicketForm is hidden, and vice versa
-
 import React from 'react';
 import NewTicketForm from './NewTicketForm';
 import TicketList from './TicketList';
+import TicketDetail from './TicketDetail';
+import EditTicketForm from './EditTicketForm';
+import { connect } from 'react-redux';
+import PropTypes from 'prop-types';
 
 class TicketControl extends React.Component {
 
@@ -11,42 +12,119 @@ class TicketControl extends React.Component {
     super(props);
     this.state = {
       formVisibleOnPage: false,
-      masterTicketList: []
+      selectedTicket: null,
+      editing: false
     };
-    //Line above: sets the default state to be that the list is showing but the form is hidden
   }
 
-  handleClick = () => { 
-    this.setState(prevState => ({
-      formVisibleOnPage: !prevState.formVisibleOnPage
-    }));
+  handleClick = () => {
+    if (this.state.selectedTicket != null) {
+      this.setState({
+        formVisibleOnPage: false,
+        selectedTicket: null,
+        editing: false
+      });
+    } else {
+      this.setState(prevState => ({
+        formVisibleOnPage: !prevState.formVisibleOnPage,
+      }));
+    }
   }
 
   handleAddingNewTicketToList = (newTicket) => {
-    const newMasterTicketList = this.state.masterTicketList.concat(newTicket);
-    this.setState({masterTicketList: newMasterTicketList,
-    formVisibleOnPage: false });
+    const { dispatch } = this.props;
+    const { id, names, location, issue } = newTicket;
+    const action = {
+      type: 'ADD_TICKET',
+      id: id, 
+      names: names,
+      location: location, 
+      issue: issue,
+    }
+    dispatch(action);
+    this.setState({
+      formVisibleOnPage: false
+    });
+  }
+
+  handleChangingSelectedTicket = (id) => {
+    const selectedTicket = this.props.masterTicketList[id];
+    this.setState({selectedTicket: selectedTicket});
+  }
+
+  handleDeletingTicket = (id) => {
+    const {dispatch}= this.props;
+    const action = {
+      type:'DELETE_TICKET',
+        id:id
+    }
+    dispatch(action);
+    this.setState({
+      selectedTicket: null
+    });
+  }
+
+  handleEditClick = () => {
+    this.setState({editing: true});
+  }
+
+  handleEditingTicketInList = (ticketToEdit) => {
+    const { dispatch } = this.props;
+    const { id, names, location, issue } = ticketToEdit;
+    const action = { 
+      type: 'ADD_TICKET',
+      id: id,
+      names: names,
+      location: location,
+      issue: issue,
+    }
+    dispatch(action);
+    this.setState({
+      editing: false,
+      selectedTicket: null
+    });
   }
 
   render(){
     let currentlyVisibleState = null;
-    let buttonText = null; // new code
-    if (this.state.formVisibleOnPage) {
-      currentlyVisibleState = <NewTicketForm onNewTicketCreation={this.handleAddingNewTicketToList}/>;
-      buttonText = "Return to Ticket List"; // new code
+    let buttonText = null;
+    if (this.state.editing ) {      
+      currentlyVisibleState = <EditTicketForm ticket = {this.state.selectedTicket} onEditTicket = {this.handleEditingTicketInList} />
+      buttonText = "Return to Ticket List";
+    } else if (this.state.selectedTicket != null) {
+      currentlyVisibleState = 
+      <TicketDetail 
+        ticket = {this.state.selectedTicket} 
+        onClickingDelete = {this.handleDeletingTicket} 
+        onClickingEdit = {this.handleEditClick} />
+      buttonText = "Return to Ticket List";
+    } else if (this.state.formVisibleOnPage) {
+      currentlyVisibleState = <NewTicketForm onNewTicketCreation={this.handleAddingNewTicketToList}  />;
+      buttonText = "Return to Ticket List";
     } else {
-      //Line below: Calls TicketList Function, passing in current state of masterTicketList
-      currentlyVisibleState = <TicketList ticketList={this.state.masterTicketList}/>;
-      buttonText = "Add Ticket"; // new code
+      currentlyVisibleState = <TicketList ticketList={this.props.masterTicketList} onTicketSelection={this.handleChangingSelectedTicket} />;
+      buttonText = "Add Ticket";
     }
     return (
       <React.Fragment>
         {currentlyVisibleState}
-        <button onClick={this.handleClick}>{buttonText}</button> { /* new code */ }
+        <button onClick={this.handleClick}>{buttonText}</button>
       </React.Fragment>
     );
   }
 
 }
+
+TicketControl.propTypes = {
+  masterTicketList: PropTypes.object
+};
+
+const mapStateToProps = state => {
+  return {
+    masterTicketList: state
+  }
+}
+
+TicketControl = connect(mapStateToProps)(TicketControl);
 
 export default TicketControl;
